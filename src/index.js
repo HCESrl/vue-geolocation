@@ -1,4 +1,14 @@
 const VueGeolocation = {
+  // implements PositionError interface, giving error code and message for "POSITION UNAVAIBLE" error
+  forceRejectErrorObject: {
+    code: 2,
+    message: 'Reject forced for testing purposes'
+  },
+  // implements PositionError interface, giving error code 0 (custom) and message for no browser support
+  noSupportErrorObject: {
+    code: 0,
+    message: 'No browser support'
+  },
   install (Vue) {
     // define the main instance function
     Vue.prototype.$getLocation = VueGeolocation.getLocation
@@ -8,11 +18,11 @@ const VueGeolocation = {
   getLocation (options = {}, forceReject = false) {
     return new Promise((resolve, reject) => {
       if(forceReject) {
-        reject('reject forced for testing purposes')
+        reject(VueGeolocation.forceRejectErrorObject)
         return
       }
       if (!VueGeolocation._isAvailable()) {
-        reject('no browser support')
+        reject(VueGeolocation.noSupportErrorObject)
       } else {
         window.navigator.geolocation.getCurrentPosition(
           position => {
@@ -24,8 +34,9 @@ const VueGeolocation = {
               accuracy: position.coords.accuracy
             })
           },
-          () => {
-            reject('no position access')
+          (err) => {
+            console.log(err.toString())
+            reject(err)
           },
           options
         )
@@ -35,11 +46,11 @@ const VueGeolocation = {
   watchLocation (options = {}, forceReject = false) {
     return new Promise((resolve, reject) => {
       if(forceReject) {
-        reject('reject forced for testing purposes')
+        reject(VueGeolocation.forceRejectErrorObject)
         return
       }
       if (!VueGeolocation._isAvailable()) {
-        reject('no browser support')
+        reject(VueGeolocation.noSupportErrorObject)
       } else {
         window.navigator.geolocation.watchPosition(
           position => {
@@ -53,8 +64,8 @@ const VueGeolocation = {
               speed: position.coords.speed
             })
           },
-          () => {
-            reject('no position access')
+          (err) => {
+            reject(err)
           },
           options
         )
@@ -64,10 +75,11 @@ const VueGeolocation = {
   clearLocation (watchID) {
     return new Promise((resolve, reject) => {
       if (!VueGeolocation._isAvailable()) {
-        reject('no browser support')
+        reject(VueGeolocation.noSupportErrorObject)
       }
       else if (!watchID) {
-        reject('please provide watchID')
+        // @todo decide which error object to return
+        reject({code: 0, message: 'please provide watchID'})
       } else {
         resolve(window.navigator.geolocation.clearWatch(watchID))
       }
